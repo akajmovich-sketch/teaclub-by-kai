@@ -349,6 +349,27 @@ html.dark .notice-card {
   gap: 18px;
 }
 
+.empty-card {
+  text-align: center;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.empty-text {
+  margin: 8px 0 0;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 .tea-card {
   padding: 18px 18px 20px;
 }

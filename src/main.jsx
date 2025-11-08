@@ -290,6 +290,14 @@ function App(){
         )}
 
         <section className="stack" aria-live="polite">
+          {results.length === 0 && selected && (
+            <article className="card empty-card">
+              <h2 className="empty-title">Скоро добавим больше чаёв</h2>
+              <p className="empty-text">
+                Пока каталог ограничен, попробуй переключить подход или выбрать другой запрос — мы обновляем подборку.
+              </p>
+            </article>
+          )}
           {results.slice(0,4).map((t) => (
             <TeaCard key={t.id} tea={t} posterKey={selected} posters={posters} />
           ))}
