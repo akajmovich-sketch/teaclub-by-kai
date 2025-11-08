@@ -1,19 +1,22 @@
-// В UMD-режиме React и ReactDOM доступны как глобальные переменные.
+// UMD-режим: React/ReactDOM — глобальные. JSX компилирует Babel.
 const { useEffect, useState } = React;
 
 const MOODS   = ["Энергия","Фокус","Спокойствие","Сон","Уют","Тепло","Легкость","Детокс","Пищеварение","Творчество"];
 const FLAVORS = ["Флоральный","Дымный","Цитрус","Землистый"];
 
 function ModeToggle({mode,setMode}) {
-  useEffect(()=>{
-    const root = document.documentElement;
-    root.classList.remove('light','dark');
-    root.classList.add(mode === 'biochem' ? 'light' : 'dark');
-  },[mode]);
   return (
     <div className="flex items-center gap-2">
-      <button className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-60'}`} onClick={()=>setMode('biochem')}>Биохимия</button>
-      <button className={`button-brand ${mode==='qi'?'opacity-100':'opacity-60'}`} onClick={()=>setMode('qi')}>Ча Ци</button>
+      <button
+        className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-60'}`}
+        onClick={()=>setMode('biochem')}
+        aria-pressed={mode==='biochem'}
+      >Биохимия</button>
+      <button
+        className={`button-brand ${mode==='qi'?'opacity-100':'opacity-60'}`}
+        onClick={()=>setMode('qi')}
+        aria-pressed={mode==='qi'}
+      >Ча Ци</button>
       <span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span>
     </div>
   );
@@ -67,6 +70,7 @@ function Poster({keyName}) {
     fetch("./public/posters.json").then(r=>r.json()).then(map=>{
       const list = map[keyName] || [];
       if (!list.length) return setUrl(null);
+      // ротация постеров по keyName
       const k=`posterIdx:${keyName}`;
       const idx = Number(localStorage.getItem(k) || "0");
       const next = (idx+1) % list.length;
@@ -78,7 +82,7 @@ function Poster({keyName}) {
   return <img src={url} alt={keyName} className="poster mt-3" />;
 }
 
-function AppCard({tea}) {
+function TeaCard({tea, posterKey}) {
   const [open,setOpen]=useState(false);
   return (
     <div className="card">
@@ -86,6 +90,7 @@ function AppCard({tea}) {
         <button className="underline" onClick={()=>setOpen(v=>!v)}>{tea.name}</button>
         <span className="badge">{tea.style}</span>
       </div>
+
       {open && (
         <div className="mt-2 text-sm">
           <div className="subtle">{tea.origin?.country}{tea.origin?.region?`, ${tea.origin.region}`:""}</div>
@@ -93,6 +98,9 @@ function AppCard({tea}) {
             {tea.brew?.infusion && <li>Проливами: {tea.brew.infusion.temp_c}°C; совет: 1-й пролив слить, ниже температура — меньше кофеина.</li>}
             {tea.brew?.thermos &&  <li>Термос: {tea.brew.thermos.temp_c}°C · {tea.brew.thermos.steep_min} мин. (слива нет)</li>}
           </ul>
+
+          {/* Постер показываем ЗДЕСЬ, при открытой карточке */}
+          {posterKey && <Poster keyName={posterKey} />}
         </div>
       )}
     </div>
@@ -102,12 +110,20 @@ function AppCard({tea}) {
 function isEvening(){ const h=new Date().getHours(); return h>=18 || h<5; }
 
 function App(){
-  const [mode,setMode] = useState("biochem");
-  const [pathway,setPathway] = useState(null);
-  const [selected,setSelected] = useState(null);
+  const [mode,setMode] = useState("biochem");      // biochem | qi
+  const [pathway,setPathway] = useState(null);     // mood | flavor
+  const [selected,setSelected] = useState(null);   // выбранный пункт
   const [soonSleep,setSoonSleep] = useState(false);
   const [results,setResults] = useState([]);
 
+  // 1) Надёжное переключение темы — на корневом <html>
+  useEffect(()=>{
+    const root = document.documentElement;
+    root.classList.remove('light','dark');
+    root.classList.add(mode === 'biochem' ? 'light' : 'dark');
+  },[mode]);
+
+  // Загрузка каталога
   useEffect(()=>{
     fetch("./public/catalog.json").then(r=>r.json()).then(j=>{ window.__CATALOG__ = j; });
   },[]);
@@ -122,54 +138,36 @@ function App(){
   return (
     <main className="container">
       <div className="h1 mb-2">teaclub by kai</div>
-      <div className="flex items-center gap-2 mb-3">
-        <button className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-70'}`} onClick={()=>setMode('biochem')}>Биохимия</button>
-        <button className={`button-brand ${mode==='qi'?'opacity-100':'opacity-70'}`} onClick={()=>setMode('qi')}>Ча Ци</button>
-        <span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span>
-      </div>
 
-      <div className="card mb-3">
-        <div className="subtle text-sm mb-2">Выбери один вариант — по настроению <em>или</em> по вкусу</div>
-        <div className="font-medium mb-1">Настроение</div>
-        <div className="chips mb-3">
-          {MOODS.map(x=>(
-            <button key={x}
-              className={`chip ${selected===x && pathway==='mood' ? 'active' : ''}`}
-              onClick={()=>{setPathway('mood');setSelected(x);}}>{x}</button>
-          ))}
-        </div>
-        <div className="font-medium mb-1">Вкус</div>
-        <div className="chips">
-          {FLAVORS.map(x=>(
-            <button key={x}
-              className={`chip ${selected===x && pathway==='flavor' ? 'active' : ''}`}
-              onClick={()=>{setPathway('flavor');setSelected(x);}}>{x}</button>
-          ))}
-        </div>
-      </div>
+      <ModeToggle mode={mode} setMode={setMode} />
 
-      <div className="card flex items-center justify-between mb-1">
-        <div className="text-sm">Сейчас: <span className="badge">{new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span></div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={soonSleep} onChange={e=>setSoonSleep(e.target.checked)} />
-          Скоро сон? <span className="badge" title="через 2–5 часов?">?</span>
-        </label>
-      </div>
-      <p className="subtle text-xs mb-3">План по объёму: <b>5 г ≈ 1 л</b> (~2–3 человека). Перед чаем желательно перекусить (хотя бы банан).</p>
+      <div className="h-gap" />
+      <PathwayPicker pathway={pathway} setPathway={setPathway} selected={selected} setSelected={setSelected} />
 
-      <button className="button-brand w-full mb-3 disabled:opacity-50" disabled={!selected} onClick={runRecommend}>Показать рекомендации</button>
+      <div className="h-gap" />
+      <ContextRow soonSleep={soonSleep} setSoonSleep={setSoonSleep} />
+
+      {/* Убрали текст про "5 г ≈ 1 л" */}
+
+      <button className="button mt-4" disabled={!selected} onClick={runRecommend}>
+        Показать рекомендации
+      </button>
 
       {showWarn && (
-        <div className="card border border-yellow-400/40 mb-3">
-          ⚠ Может нарушить сон. Компромиссы: короткие проливы на негорячей воде, GABA-улун короткими проливами, травяные альтернативы.
+        <div className="card mt-3 border border-yellow-400/40">
+          <p className="text-xs">
+            ⚠ Позднее время, чай с кофеином может нарушить сон. Компромиссы: короткие проливы на негорячей воде, GABA-улун короткими проливами, травяные альтернативы
+          </p>
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {results.slice(0,4).map(t=>(<AppCard key={t.id} tea={t} />))}
+      <div className="flex flex-col gap-2 mt-3">
+        {results.slice(0,4).map(t=>(
+          <TeaCard key={t.id} tea={t} posterKey={selected} />
+        ))}
       </div>
 
-      {selected && <Poster keyName={selected}/>}
+      {/* Постер с главной убрали */}
       <div className="mt-6 text-right link"
            onClick={()=>alert("🐌 Я Кай — умею в чай до любой глубины. Провожу чайные мастермайнды tea & deep talk.\n\nUSDT TRC-20: TVgSTH5hKb6QMdpZtJE8TjBLSsHoVYzFj1\nUSDT Arbitrum: 0xE981146705437f03C8A241bD3d72454f8656bCb9")}>
         by kai
