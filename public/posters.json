@@ -1,44 +1,23 @@
 {
-  "teas": [
-    {
-      "id": "anji-baicha",
-      "name": "Anji Bai Cha",
-      "style": "green",
-      "origin": { "country": "China", "region": "Zhejiang" },
-      "brew": {
-        "infusion": { "g_per_100ml": 2.0, "temp_c": 82, "sec": [8,10,10,12,15] },
-        "thermos":  { "g": 5, "water_ml": 1000, "temp_c": 80, "steep_min": 15 }
-      }
-    },
-    {
-      "id": "gaba-oolong",
-      "name": "GABA Oolong",
-      "style": "turquoise",
-      "origin": { "country": "Taiwan", "region": "" },
-      "brew": {
-        "infusion": { "g_per_100ml": 2.0, "temp_c": 90, "sec": [6,6,8,10,12,15] },
-        "thermos":  { "g": 5, "water_ml": 1000, "temp_c": 88, "steep_min": 18 }
-      }
-    },
-    {
-      "id": "shu-puer",
-      "name": "Shu Pu'er",
-      "style": "black",
-      "origin": { "country": "China", "region": "Yunnan" },
-      "brew": {
-        "infusion": { "g_per_100ml": 2.2, "temp_c": 98, "sec": [8,10,12,15,18,22] },
-        "thermos":  { "g": 5, "water_ml": 1000, "temp_c": 96, "steep_min": 25 }
-      }
-    },
-    {
-      "id": "dianhong",
-      "name": "Dianhong",
-      "style": "red",
-      "origin": { "country": "China", "region": "Yunnan" },
-      "brew": {
-        "infusion": { "g_per_100ml": 2.0, "temp_c": 94, "sec": [8,8,10,12,15] },
-        "thermos":  { "g": 5, "water_ml": 1000, "temp_c": 92, "steep_min": 18 }
-      }
-    }
+  "Энергия": [
+    "posters/energy1.jpg",
+    "posters/energy2.jpg",
+    "posters/energy3.jpg",
+    "posters/energy4.jpg",
+    "posters/energy5.jpg"
+  ],
+  "Фокус": [
+    "posters/focus1.jpg",
+    "posters/focus2.jpg",
+    "posters/focus3.jpg",
+    "posters/focus4.jpg",
+    "posters/focus5.jpg"
+  ],
+  "Спокойствие": [
+    "posters/calm1.jpg",
+    "posters/calm2.jpg",
+    "posters/calm3.jpg",
+    "posters/calm4.jpg",
+    "posters/calm5.jpg"
   ]
 }
