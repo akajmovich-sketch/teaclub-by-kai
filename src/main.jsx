@@ -1,51 +1,128 @@
 // UMD-режим: React/ReactDOM — глобальные. JSX компилирует Babel.
-const { useEffect, useState } = React;
+const { useEffect, useMemo, useState } = React;
 
 const MOODS   = ["Энергия","Фокус","Спокойствие","Сон","Уют","Тепло","Легкость","Детокс","Пищеварение","Творчество"];
 const FLAVORS = ["Флоральный","Дымный","Цитрус","Землистый"];
 
-function ModeToggle({mode,setMode}) {
+const RECOMMENDATIONS = {
+  biochem: {
+    mood: {
+      Энергия: ["dianhong", "shu-puer"],
+      Фокус: ["anji-baicha", "dianhong"],
+      Спокойствие: ["gaba-oolong", "shu-puer"],
+      Сон: ["gaba-oolong"],
+      Уют: ["dianhong", "shu-puer"],
+      Тепло: ["shu-puer", "dianhong"],
+      Легкость: ["anji-baicha"],
+      Детокс: ["anji-baicha"],
+      Пищеварение: ["shu-puer"],
+      Творчество: ["gaba-oolong", "anji-baicha"],
+    },
+    flavor: {
+      Флоральный: ["anji-baicha", "gaba-oolong"],
+      Дымный: ["shu-puer"],
+      Цитрус: ["dianhong"],
+      Землистый: ["shu-puer", "dianhong"],
+    },
+  },
+  qi: {
+    mood: {
+      Энергия: ["dianhong", "anji-baicha"],
+      Фокус: ["gaba-oolong"],
+      Спокойствие: ["gaba-oolong", "shu-puer"],
+      Сон: ["gaba-oolong"],
+      Уют: ["shu-puer"],
+      Тепло: ["shu-puer", "dianhong"],
+      Легкость: ["anji-baicha"],
+      Детокс: ["anji-baicha"],
+      Пищеварение: ["shu-puer"],
+      Творчество: ["gaba-oolong", "dianhong"],
+    },
+    flavor: {
+      Флоральный: ["gaba-oolong"],
+      Дымный: ["shu-puer"],
+      Цитрус: ["anji-baicha", "dianhong"],
+      Землистый: ["shu-puer"],
+    },
+  },
+};
+
+function ModeToggle({ mode, setMode }) {
+  const indicatorStyle = { transform: `translateX(${mode === 'qi' ? '100%' : '0'})` };
   return (
-    <div className="flex items-center gap-2">
-      <button
-        className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-60'}`}
-        onClick={()=>setMode('biochem')}
-        aria-pressed={mode==='biochem'}
-      >Биохимия</button>
-      <button
-        className={`button-brand ${mode==='qi'?'opacity-100':'opacity-60'}`}
-        onClick={()=>setMode('qi')}
-        aria-pressed={mode==='qi'}
-      >Ча Ци</button>
-      <span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span>
-    </div>
+    <section className="card">
+      <div className="card-header">
+        <h2 className="card-title">Как читаем чай</h2>
+        <p className="card-sub">Выбери подход к рекомендации.</p>
+      </div>
+      <div className="pill-switch" role="tablist" aria-label="Переключатель режима">
+        <span className="pill-indicator" style={indicatorStyle} aria-hidden="true" />
+        <button
+          type="button"
+          className="pill-option"
+          role="tab"
+          aria-selected={mode === 'biochem'}
+          onClick={() => setMode('biochem')}
+        >
+          Биохимия
+        </button>
+        <button
+          type="button"
+          className="pill-option"
+          role="tab"
+          aria-selected={mode === 'qi'}
+          onClick={() => setMode('qi')}
+        >
+          Ча Ци
+        </button>
+      </div>
+      <p className="card-note">
+        <span className="brand-dot" aria-hidden="true" />
+        <span>
+          Биохимия — про состав, молекулы и телесный отклик. Ча Ци — про тонкую энергетику, созерцание и поток.
+        </span>
+      </p>
+    </section>
   );
 }
 
-function PathwayPicker({pathway,setPathway,selected,setSelected}) {
-  const ChipList = (list,p)=>(
-    <div className="chips mt-3">
-      {list.map(x=>(
-        <button key={x}
-          onClick={()=>{setPathway(p); setSelected(x);}}
-          className={`chip ${selected===x && pathway===p ? "active" : ""}`}>
-          {x}
-        </button>
-      ))}
+function PathwayPicker({ pathway, setPathway, selected, setSelected }) {
+  const ChipList = (list, p) => (
+    <div className="chip-group">
+      {list.map((x) => {
+        const isActive = selected === x && pathway === p;
+        return (
+          <button
+            key={x}
+            type="button"
+            onClick={() => {
+              setPathway(p);
+              setSelected(x);
+            }}
+            className={`chip ${isActive ? 'is-active' : ''}`}
+            aria-pressed={isActive}
+          >
+            {x}
+          </button>
+        );
+      })}
     </div>
   );
   return (
-    <div className="card">
-      <div className="subtle text-sm mb-2">Выбери один вариант — по настроению <em>или</em> по вкусу</div>
-      <div>
-        <div className="font-medium">Настроение</div>
-        {ChipList(MOODS,"mood")}
+    <section className="card">
+      <div className="card-header">
+        <h2 className="card-title">Что важнее сейчас?</h2>
+        <p className="card-sub">Выбери один вариант — по настроению <em>или</em> по вкусу.</p>
       </div>
-      <div className="mt-4">
-        <div className="font-medium">Вкус</div>
-        {ChipList(FLAVORS,"flavor")}
+      <div className="chip-section">
+        <h3 className="section-label">Настроение</h3>
+        {ChipList(MOODS, 'mood')}
       </div>
-    </div>
+      <div className="chip-section">
+        <h3 className="section-label">Вкус</h3>
+        {ChipList(FLAVORS, 'flavor')}
+      </div>
+    </section>
   );
 }
 
@@ -54,56 +131,77 @@ function ContextRow({soonSleep,setSoonSleep}) {
   useEffect(()=>{ const t=setInterval(()=>setTime(new Date()),60000); return ()=>clearInterval(t); },[]);
   const tstr = time.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
   return (
-    <div className="card flex items-center justify-between">
-      <div className="text-sm">Сейчас: <span className="badge">{tstr}</span></div>
-      <label className="flex items-center gap-2 text-sm">
+    <section className="card context-card">
+      <div className="context-top">
+        <div>
+          <div className="card-sub">Сейчас</div>
+          <span className="time-pill">{tstr}</span>
+        </div>
+        <div className="card-sub">Режим дня</div>
+      </div>
+      <label className="sleep-toggle" title="Планирую сон через 2–5 часов">
         <input type="checkbox" checked={soonSleep} onChange={e=>setSoonSleep(e.target.checked)} />
-        Скоро сон? <span className="badge" title="через 2–5 часов?">?</span>
+        <span>Планирую сон в течение 2–5 часов</span>
       </label>
-    </div>
+    </section>
   );
 }
 
-function Poster({keyName}) {
-  const [url,setUrl]=useState(null);
-  useEffect(()=>{
-    fetch("./public/posters.json").then(r=>r.json()).then(map=>{
-      const list = map[keyName] || [];
-      if (!list.length) return setUrl(null);
-      // ротация постеров по keyName
-      const k=`posterIdx:${keyName}`;
-      const idx = Number(localStorage.getItem(k) || "0");
-      const next = (idx+1) % list.length;
-      localStorage.setItem(k,String(next));
-      setUrl(list[idx].startsWith("http")? list[idx] : `./public/${list[idx]}`);
-    }).catch(()=>{});
-  },[keyName]);
-  if(!url) return null;
-  return <img src={url} alt={keyName} className="poster mt-3" />;
+function Poster({ posterKey, postersMap }) {
+  const posterList = useMemo(() => postersMap?.[posterKey] || [], [postersMap, posterKey]);
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    if (!posterList.length) {
+      setUrl(null);
+      return;
+    }
+    const storageKey = `posterIdx:${posterKey}`;
+    const storedIndex = Number(localStorage.getItem(storageKey) || "0");
+    const safeIndex = storedIndex % posterList.length;
+    const nextIndex = (safeIndex + 1) % posterList.length;
+    localStorage.setItem(storageKey, String(nextIndex));
+    const candidate = posterList[safeIndex];
+    setUrl(candidate?.startsWith("http") ? candidate : `./public/${candidate}`);
+  }, [posterKey, posterList]);
+
+  if (!url) return null;
+  return <img src={url} alt={posterKey} className="poster" />;
 }
 
-function TeaCard({tea, posterKey}) {
-  const [open,setOpen]=useState(false);
+function TeaCard({ tea, posterKey, posters }) {
+  const [open, setOpen] = useState(false);
+  const originLine = [tea.origin?.country, tea.origin?.region].filter(Boolean).join(', ');
   return (
-    <div className="card">
-      <div className="flex items-center justify-between">
-        <button className="underline" onClick={()=>setOpen(v=>!v)}>{tea.name}</button>
-        <span className="badge">{tea.style}</span>
-      </div>
+    <article className={`card tea-card${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="tea-header"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <div>
+          <span className="tea-name">{tea.name}</span>
+          {originLine && <div className="tea-origin">{originLine}</div>}
+        </div>
+        <span className="tea-style">{tea.style}</span>
+      </button>
 
       {open && (
-        <div className="mt-2 text-sm">
-          <div className="subtle">{tea.origin?.country}{tea.origin?.region?`, ${tea.origin.region}`:""}</div>
-          <ul className="list-disc ml-5 mt-1">
-            {tea.brew?.infusion && <li>Проливами: {tea.brew.infusion.temp_c}°C; совет: 1-й пролив слить, ниже температура — меньше кофеина.</li>}
-            {tea.brew?.thermos &&  <li>Термос: {tea.brew.thermos.temp_c}°C · {tea.brew.thermos.steep_min} мин. (слива нет)</li>}
+        <div className="tea-body">
+          <ul>
+            {tea.brew?.infusion && (
+              <li>Проливами: {tea.brew.infusion.temp_c}°C; совет — первый пролив слить, ниже температура снизит кофеин.</li>
+            )}
+            {tea.brew?.thermos && (
+              <li>Термос: {tea.brew.thermos.temp_c}°C · {tea.brew.thermos.steep_min} мин. (слива нет).</li>
+            )}
           </ul>
 
-          {/* Постер показываем ЗДЕСЬ, при открытой карточке */}
-          {posterKey && <Poster keyName={posterKey} />}
+          {posterKey && <Poster posterKey={posterKey} postersMap={posters} />}
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -114,7 +212,15 @@ function App(){
   const [pathway,setPathway] = useState(null);     // mood | flavor
   const [selected,setSelected] = useState(null);   // выбранный пункт
   const [soonSleep,setSoonSleep] = useState(false);
+  const [catalog,setCatalog] = useState([]);
+  const [posters,setPosters] = useState({});
   const [results,setResults] = useState([]);
+
+  useEffect(()=>{
+    if (!selected) {
+      setResults([]);
+    }
+  },[mode, pathway, selected]);
 
   // 1) Надёжное переключение темы — на корневом <html>
   useEffect(()=>{
@@ -125,53 +231,88 @@ function App(){
 
   // Загрузка каталога
   useEffect(()=>{
-    fetch("./public/catalog.json").then(r=>r.json()).then(j=>{ window.__CATALOG__ = j; });
+    let ignore = false;
+    Promise.all([
+      fetch("./public/catalog.json").then((r)=>r.json()).catch(()=>null),
+      fetch("./public/posters.json").then((r)=>r.json()).catch(()=>null),
+    ]).then(([catalogJson, postersJson])=>{
+      if (ignore) return;
+      setCatalog(Array.isArray(catalogJson?.teas) ? catalogJson.teas : []);
+      setPosters(postersJson && typeof postersJson === 'object' ? postersJson : {});
+    });
+    return () => { ignore = true; };
   },[]);
 
+  const catalogById = useMemo(()=>{
+    return catalog.reduce((acc, tea)=>{
+      if (tea?.id) acc[tea.id] = tea;
+      return acc;
+    }, {});
+  },[catalog]);
+
   function runRecommend(){
-    const cat = (window.__CATALOG__||{}).teas || [];
-    setResults(cat.slice(0,4)); // заглушка — заменим на скоринг позже
+    const pool = RECOMMENDATIONS[mode]?.[pathway]?.[selected] || [];
+    const deduped = Array.from(new Set(pool));
+    const mapped = deduped
+      .map((id)=>catalogById[id])
+      .filter(Boolean);
+    const fallback = mapped.length ? mapped : catalog.slice(0, 4);
+    setResults(fallback);
   }
 
   const showWarn = (isEvening() || soonSleep) && pathway==="mood" && ["Энергия","Фокус","Творчество"].includes(selected||"");
 
   return (
-    <main className="container">
-      <div className="h1 mb-2">teaclub by kai</div>
+    <main className="app-shell">
+      <section className="container">
+        <header>
+          <span className="hero-badge">teaclub by kai</span>
+          <h1 className="hero-title">Настрой чай под своё состояние</h1>
+          <p className="hero-text">Выбирай подход, фильтруй по настроению или вкусу и получай живые рекомендации прямо сейчас.</p>
+        </header>
 
-      <ModeToggle mode={mode} setMode={setMode} />
+        <ModeToggle mode={mode} setMode={setMode} />
 
-      <div className="h-gap" />
-      <PathwayPicker pathway={pathway} setPathway={setPathway} selected={selected} setSelected={setSelected} />
+        <PathwayPicker pathway={pathway} setPathway={setPathway} selected={selected} setSelected={setSelected} />
 
-      <div className="h-gap" />
-      <ContextRow soonSleep={soonSleep} setSoonSleep={setSoonSleep} />
+        <ContextRow soonSleep={soonSleep} setSoonSleep={setSoonSleep} />
 
-      {/* Убрали текст про "5 г ≈ 1 л" */}
+        <button className="cta-button" disabled={!selected} onClick={runRecommend}>
+          Показать рекомендации
+        </button>
 
-      <button className="button mt-4" disabled={!selected} onClick={runRecommend}>
-        Показать рекомендации
-      </button>
+        {showWarn && (
+          <div className="notice-card" role="status">
+            <p className="notice-text">
+              ⚠ Позднее время, чай с кофеином может нарушить сон. Компромиссы: короткие проливы на негорячей воде, GABA-улун короткими проливами, травяные альтернативы.
+            </p>
+          </div>
+        )}
 
-      {showWarn && (
-        <div className="card mt-3 border border-yellow-400/40">
-          <p className="text-xs">
-            ⚠ Позднее время, чай с кофеином может нарушить сон. Компромиссы: короткие проливы на негорячей воде, GABA-улун короткими проливами, травяные альтернативы
-          </p>
-        </div>
-      )}
+        <section className="stack" aria-live="polite">
+          {results.length === 0 && selected && (
+            <article className="card empty-card">
+              <h2 className="empty-title">Скоро добавим больше чаёв</h2>
+              <p className="empty-text">
+                Пока каталог ограничен, попробуй переключить подход или выбрать другой запрос — мы обновляем подборку.
+              </p>
+            </article>
+          )}
+          {results.slice(0,4).map((t) => (
+            <TeaCard key={t.id} tea={t} posterKey={selected} posters={posters} />
+          ))}
+        </section>
 
-      <div className="flex flex-col gap-2 mt-3">
-        {results.slice(0,4).map(t=>(
-          <TeaCard key={t.id} tea={t} posterKey={selected} />
-        ))}
-      </div>
-
-      {/* Постер с главной убрали */}
-      <div className="mt-6 text-right link"
-           onClick={()=>alert("🐌 Я Кай — умею в чай до любой глубины. Провожу чайные мастермайнды tea & deep talk.\n\nUSDT TRC-20: TVgSTH5hKb6QMdpZtJE8TjBLSsHoVYzFj1\nUSDT Arbitrum: 0xE981146705437f03C8A241bD3d72454f8656bCb9")}>
-        by kai
-      </div>
+        <footer className="footer-note">
+          <button
+            type="button"
+            className="footer-link"
+            onClick={()=>alert("🐌 Я Кай — умею в чай до любой глубины. Провожу чайные мастермайнды tea & deep talk.\n\nUSDT TRC-20: TVgSTH5hKb6QMdpZtJE8TjBLSsHoVYzFj1\nUSDT Arbitrum: 0xE981146705437f03C8A241bD3d72454f8656bCb9")}
+          >
+            by kai
+          </button>
+        </footer>
+      </section>
     </main>
   );
 }
