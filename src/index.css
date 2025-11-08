@@ -361,6 +361,7 @@ html.dark .notice-card {
   align-items: center;
   color: inherit;
   padding: 0;
+  position: relative;
 }
 
 .tea-name {
@@ -386,6 +387,9 @@ html.dark .tea-style {
   margin-top: 16px;
   color: var(--fg-muted);
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .tea-origin {
@@ -397,6 +401,33 @@ html.dark .tea-style {
 .tea-body ul {
   margin: 12px 0 0 18px;
   padding: 0;
+}
+
+.tea-body li {
+  margin-bottom: 8px;
+}
+
+.tea-header::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-50%) rotate(45deg);
+  opacity: 0.55;
+  transition: transform var(--transition), opacity var(--transition);
+}
+
+.tea-card.is-open .tea-header::after {
+  transform: translateY(-50%) rotate(-135deg);
+  opacity: 0.9;
+}
+
+.tea-card.is-open {
+  background: color-mix(in srgb, var(--card-bg) 70%, var(--brand) 6%);
 }
 
 .poster {

@@ -1,8 +1,51 @@
 // UMD-режим: React/ReactDOM — глобальные. JSX компилирует Babel.
-const { useEffect, useState } = React;
+const { useEffect, useMemo, useState } = React;
 
 const MOODS   = ["Энергия","Фокус","Спокойствие","Сон","Уют","Тепло","Легкость","Детокс","Пищеварение","Творчество"];
 const FLAVORS = ["Флоральный","Дымный","Цитрус","Землистый"];
+
+const RECOMMENDATIONS = {
+  biochem: {
+    mood: {
+      Энергия: ["dianhong", "shu-puer"],
+      Фокус: ["anji-baicha", "dianhong"],
+      Спокойствие: ["gaba-oolong", "shu-puer"],
+      Сон: ["gaba-oolong"],
+      Уют: ["dianhong", "shu-puer"],
+      Тепло: ["shu-puer", "dianhong"],
+      Легкость: ["anji-baicha"],
+      Детокс: ["anji-baicha"],
+      Пищеварение: ["shu-puer"],
+      Творчество: ["gaba-oolong", "anji-baicha"],
+    },
+    flavor: {
+      Флоральный: ["anji-baicha", "gaba-oolong"],
+      Дымный: ["shu-puer"],
+      Цитрус: ["dianhong"],
+      Землистый: ["shu-puer", "dianhong"],
+    },
+  },
+  qi: {
+    mood: {
+      Энергия: ["dianhong", "anji-baicha"],
+      Фокус: ["gaba-oolong"],
+      Спокойствие: ["gaba-oolong", "shu-puer"],
+      Сон: ["gaba-oolong"],
+      Уют: ["shu-puer"],
+      Тепло: ["shu-puer", "dianhong"],
+      Легкость: ["anji-baicha"],
+      Детокс: ["anji-baicha"],
+      Пищеварение: ["shu-puer"],
+      Творчество: ["gaba-oolong", "dianhong"],
+    },
+    flavor: {
+      Флоральный: ["gaba-oolong"],
+      Дымный: ["shu-puer"],
+      Цитрус: ["anji-baicha", "dianhong"],
+      Землистый: ["shu-puer"],
+    },
+  },
+};
 
 function ModeToggle({ mode, setMode }) {
   const indicatorStyle = { transform: `translateX(${mode === 'qi' ? '100%' : '0'})` };
@@ -104,25 +147,29 @@ function ContextRow({soonSleep,setSoonSleep}) {
   );
 }
 
-function Poster({keyName}) {
-  const [url,setUrl]=useState(null);
-  useEffect(()=>{
-    fetch("./public/posters.json").then(r=>r.json()).then(map=>{
-      const list = map[keyName] || [];
-      if (!list.length) return setUrl(null);
-      // ротация постеров по keyName
-      const k=`posterIdx:${keyName}`;
-      const idx = Number(localStorage.getItem(k) || "0");
-      const next = (idx+1) % list.length;
-      localStorage.setItem(k,String(next));
-      setUrl(list[idx].startsWith("http")? list[idx] : `./public/${list[idx]}`);
-    }).catch(()=>{});
-  },[keyName]);
-  if(!url) return null;
-  return <img src={url} alt={keyName} className="poster" />;
+function Poster({ posterKey, postersMap }) {
+  const posterList = useMemo(() => postersMap?.[posterKey] || [], [postersMap, posterKey]);
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    if (!posterList.length) {
+      setUrl(null);
+      return;
+    }
+    const storageKey = `posterIdx:${posterKey}`;
+    const storedIndex = Number(localStorage.getItem(storageKey) || "0");
+    const safeIndex = storedIndex % posterList.length;
+    const nextIndex = (safeIndex + 1) % posterList.length;
+    localStorage.setItem(storageKey, String(nextIndex));
+    const candidate = posterList[safeIndex];
+    setUrl(candidate?.startsWith("http") ? candidate : `./public/${candidate}`);
+  }, [posterKey, posterList]);
+
+  if (!url) return null;
+  return <img src={url} alt={posterKey} className="poster" />;
 }
 
-function TeaCard({ tea, posterKey }) {
+function TeaCard({ tea, posterKey, posters }) {
   const [open, setOpen] = useState(false);
   const originLine = [tea.origin?.country, tea.origin?.region].filter(Boolean).join(', ');
   return (
@@ -151,7 +198,7 @@ function TeaCard({ tea, posterKey }) {
             )}
           </ul>
 
-          {posterKey && <Poster keyName={posterKey} />}
+          {posterKey && <Poster posterKey={posterKey} postersMap={posters} />}
         </div>
       )}
     </article>
@@ -165,7 +212,15 @@ function App(){
   const [pathway,setPathway] = useState(null);     // mood | flavor
   const [selected,setSelected] = useState(null);   // выбранный пункт
   const [soonSleep,setSoonSleep] = useState(false);
+  const [catalog,setCatalog] = useState([]);
+  const [posters,setPosters] = useState({});
   const [results,setResults] = useState([]);
+
+  useEffect(()=>{
+    if (!selected) {
+      setResults([]);
+    }
+  },[mode, pathway, selected]);
 
   // 1) Надёжное переключение темы — на корневом <html>
   useEffect(()=>{
@@ -176,12 +231,33 @@ function App(){
 
   // Загрузка каталога
   useEffect(()=>{
-    fetch("./public/catalog.json").then(r=>r.json()).then(j=>{ window.__CATALOG__ = j; });
+    let ignore = false;
+    Promise.all([
+      fetch("./public/catalog.json").then((r)=>r.json()).catch(()=>null),
+      fetch("./public/posters.json").then((r)=>r.json()).catch(()=>null),
+    ]).then(([catalogJson, postersJson])=>{
+      if (ignore) return;
+      setCatalog(Array.isArray(catalogJson?.teas) ? catalogJson.teas : []);
+      setPosters(postersJson && typeof postersJson === 'object' ? postersJson : {});
+    });
+    return () => { ignore = true; };
   },[]);
 
+  const catalogById = useMemo(()=>{
+    return catalog.reduce((acc, tea)=>{
+      if (tea?.id) acc[tea.id] = tea;
+      return acc;
+    }, {});
+  },[catalog]);
+
   function runRecommend(){
-    const cat = (window.__CATALOG__||{}).teas || [];
-    setResults(cat.slice(0,4)); // заглушка — заменим на скоринг позже
+    const pool = RECOMMENDATIONS[mode]?.[pathway]?.[selected] || [];
+    const deduped = Array.from(new Set(pool));
+    const mapped = deduped
+      .map((id)=>catalogById[id])
+      .filter(Boolean);
+    const fallback = mapped.length ? mapped : catalog.slice(0, 4);
+    setResults(fallback);
   }
 
   const showWarn = (isEvening() || soonSleep) && pathway==="mood" && ["Энергия","Фокус","Творчество"].includes(selected||"");
@@ -215,7 +291,7 @@ function App(){
 
         <section className="stack" aria-live="polite">
           {results.slice(0,4).map((t) => (
-            <TeaCard key={t.id} tea={t} posterKey={selected} />
+            <TeaCard key={t.id} tea={t} posterKey={selected} posters={posters} />
           ))}
         </section>
 
