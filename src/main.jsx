@@ -1,10 +1,183 @@
-import React, { useEffect, useState } from "https://esm.sh/react@18";
+// В UMD-режиме React и ReactDOM доступны как глобальные переменные.
+const { useEffect, useState } = React;
 
-const MOODS=["Энергия","Фокус","Спокойствие","Сон","Уют","Тепло","Легкость","Детокс","Пищеварение","Творчество"];const FLAVORS=["Флоральный","Дымный","Цитрус","Землистый"];
-function ModeToggle({mode,setMode}){useEffect(()=>{const root=document.documentElement;root.classList.remove('light','dark');root.classList.add(mode==='biochem'?'light':'dark')},[mode]);return(<div className="flex items-center gap-2"><button className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-60'}`} onClick={()=>setMode('biochem')}>Биохимия</button><button className={`button-brand ${mode==='qi'?'opacity-100':'opacity-60'}`} onClick={()=>setMode('qi')}>Ча Ци</button><span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span></div>)}
-function PathwayPicker({pathway,setPathway,selected,setSelected}){const ChipList=(list,p)=>(<div className="chips mt-3">{list.map(x=>(<button key={x} onClick={()=>{setPathway(p);setSelected(x);}} className={`chip ${selected===x&&pathway===p?"active":""}`}>{x}</button>))}</div>);return(<div className="card"><div className="subtle text-sm mb-2">Выбери один вариант — по настроению <em>или</em> по вкусу</div><div><div className="font-medium">Настроение</div>{ChipList(MOODS,"mood")}</div><div className="mt-4"><div className="font-medium">Вкус</div>{ChipList(FLAVORS,"flavor")}</div></div>)}
-function ContextRow({soonSleep,setSoonSleep}){const [time,setTime]=useState(new Date());useEffect(()=>{const t=setInterval(()=>setTime(new Date()),60000);return()=>clearInterval(t)},[]);const tstr=time.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});return(<div className="card flex items-center justify-between"><div className="text-sm">Сейчас: <span className="badge">{tstr}</span></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={soonSleep} onChange={e=>setSoonSleep(e.target.checked)} />Скоро сон? <span className="badge" title="через 2–5 часов?">?</span></label></div>)}
-function Poster({keyName}){const [url,setUrl]=useState(null);useEffect(()=>{fetch("./public/posters.json").then(r=>r.json()).then(map=>{const list=map[keyName]||[];if(!list.length)return setUrl(null);const k=`posterIdx:${keyName}`;const idx=Number(localStorage.getItem(k)||"0");const next=(idx+1)%list.length;localStorage.setItem(k,String(next));setUrl(list[idx].startsWith("http")?list[idx]:`./public/${list[idx]}`)}).catch(()=>{})},[keyName]);if(!url)return null;return <img src={url} alt={keyName} className="poster mt-3" />}
-function AppCard({tea}){const [open,setOpen]=useState(false);return(<div className="card"><div className="flex items-center justify-between"><button className="underline" onClick={()=>setOpen(v=>!v)}>{tea.name}</button><span className="badge">{tea.style}</span></div>{open&&(<div className="mt-2 text-sm"><div className="subtle">{tea.origin?.country}{tea.origin?.region?`, ${tea.origin.region}`:""}</div><ul className="list-disc ml-5 mt-1">{tea.brew?.infusion&&<li>Проливами: {tea.brew.infusion.temp_c}°C; совет: 1-й пролив слить, ниже температура — меньше кофеина.</li>}{tea.brew?.thermos&&<li>Термос: {tea.brew.thermos.temp_c}°C · {tea.brew.thermos.steep_min} мин. (слива нет)</li>}</ul></div>)}</div>)}
-function isEvening(){const h=new Date().getHours();return h>=18||h<5}
-export default function App(){const [mode,setMode]=useState("biochem");const [pathway,setPathway]=useState(null);const [selected,setSelected]=useState(null);const [soonSleep,setSoonSleep]=useState(false);const [results,setResults]=useState([]);useEffect(()=>{fetch("./public/catalog.json").then(r=>r.json()).then(j=>{window.__CATALOG__=j})},[]);function runRecommend(){const cat=(window.__CATALOG__||{}).teas||[];setResults(cat.slice(0,4))}const showWarn=(isEvening()||soonSleep)&&pathway==="mood"&&["Энергия","Фокус","Творчество"].includes(selected||"");return(<main className="container"><div className="h1 mb-2">teaclub by kai</div><div className="flex items-center gap-2 mb-3"><button className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-70'}`} onClick={()=>setMode('biochem')}>Биохимия</button><button className={`button-brand ${mode==='qi'?'opacity-100':'opacity-70'}`} onClick={()=>setMode('qi')}>Ча Ци</button><span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span></div><div className="card mb-3"><div className="subtle text-sm mb-2">Выбери один вариант — по настроению <em>или</em> по вкусу</div><div className="font-medium mb-1">Настроение</div><div className="chips mb-3">{MOODS.map(x=>(<button key={x} className={`chip ${selected===x&&pathway==='mood'?'active':''}`} onClick={()=>{setPathway('mood');setSelected(x);}}>{x}</button>))}</div><div className="font-medium mb-1">Вкус</div><div className="chips">{FLAVORS.map(x=>(<button key={x} className={`chip ${selected===x&&pathway==='flavor'?'active':''}`} onClick={()=>{setPathway('flavor');setSelected(x);}}>{x}</button>))}</div></div><div className="card flex items-center justify-between mb-1"><div className="text-sm">Сейчас: <span className="badge">{new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={soonSleep} onChange={e=>setSoonSleep(e.target.checked)} />Скоро сон? <span className="badge" title="через 2–5 часов?">?</span></label></div><p className="subtle text-xs mb-3">План по объёму: <b>5 г ≈ 1 л</b> (~2–3 человека). Перед чаем желательно перекусить (хотя бы банан).</p><button className="button-brand w-full mb-3 disabled:opacity-50" disabled={!selected} onClick={runRecommend}>Показать рекомендации</button>{showWarn&&(<div className="card border border-yellow-400/40 mb-3">⚠ Может нарушить сон. Компромиссы: короткие проливы на негорячей воде, GABA-улун короткими проливами, травяные альтернативы.</div>)}<div className="flex flex-col gap-2">{results.slice(0,4).map(t=>(<AppCard key={t.id} tea={t} />))}</div>{selected&&<Poster keyName={selected}/>}<div className="mt-6 text-right link" onClick={()=>alert("🐌 Я Кай — умею в чай до любой глубины. Провожу чайные мастермайнды tea & deep talk.\n\nUSDT TRC-20: TVgSTH5hKb6QMdpZtJE8TjBLSsHoVYzFj1\nUSDT Arbitrum: 0xE981146705437f03C8A241bD3d72454f8656bCb9")}>by kai</div></main>)}
+const MOODS   = ["Энергия","Фокус","Спокойствие","Сон","Уют","Тепло","Легкость","Детокс","Пищеварение","Творчество"];
+const FLAVORS = ["Флоральный","Дымный","Цитрус","Землистый"];
+
+function ModeToggle({mode,setMode}) {
+  useEffect(()=>{
+    const root = document.documentElement;
+    root.classList.remove('light','dark');
+    root.classList.add(mode === 'biochem' ? 'light' : 'dark');
+  },[mode]);
+  return (
+    <div className="flex items-center gap-2">
+      <button className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-60'}`} onClick={()=>setMode('biochem')}>Биохимия</button>
+      <button className={`button-brand ${mode==='qi'?'opacity-100':'opacity-60'}`} onClick={()=>setMode('qi')}>Ча Ци</button>
+      <span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span>
+    </div>
+  );
+}
+
+function PathwayPicker({pathway,setPathway,selected,setSelected}) {
+  const ChipList = (list,p)=>(
+    <div className="chips mt-3">
+      {list.map(x=>(
+        <button key={x}
+          onClick={()=>{setPathway(p); setSelected(x);}}
+          className={`chip ${selected===x && pathway===p ? "active" : ""}`}>
+          {x}
+        </button>
+      ))}
+    </div>
+  );
+  return (
+    <div className="card">
+      <div className="subtle text-sm mb-2">Выбери один вариант — по настроению <em>или</em> по вкусу</div>
+      <div>
+        <div className="font-medium">Настроение</div>
+        {ChipList(MOODS,"mood")}
+      </div>
+      <div className="mt-4">
+        <div className="font-medium">Вкус</div>
+        {ChipList(FLAVORS,"flavor")}
+      </div>
+    </div>
+  );
+}
+
+function ContextRow({soonSleep,setSoonSleep}) {
+  const [time,setTime]=useState(new Date());
+  useEffect(()=>{ const t=setInterval(()=>setTime(new Date()),60000); return ()=>clearInterval(t); },[]);
+  const tstr = time.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  return (
+    <div className="card flex items-center justify-between">
+      <div className="text-sm">Сейчас: <span className="badge">{tstr}</span></div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={soonSleep} onChange={e=>setSoonSleep(e.target.checked)} />
+        Скоро сон? <span className="badge" title="через 2–5 часов?">?</span>
+      </label>
+    </div>
+  );
+}
+
+function Poster({keyName}) {
+  const [url,setUrl]=useState(null);
+  useEffect(()=>{
+    fetch("./public/posters.json").then(r=>r.json()).then(map=>{
+      const list = map[keyName] || [];
+      if (!list.length) return setUrl(null);
+      const k=`posterIdx:${keyName}`;
+      const idx = Number(localStorage.getItem(k) || "0");
+      const next = (idx+1) % list.length;
+      localStorage.setItem(k,String(next));
+      setUrl(list[idx].startsWith("http")? list[idx] : `./public/${list[idx]}`);
+    }).catch(()=>{});
+  },[keyName]);
+  if(!url) return null;
+  return <img src={url} alt={keyName} className="poster mt-3" />;
+}
+
+function AppCard({tea}) {
+  const [open,setOpen]=useState(false);
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between">
+        <button className="underline" onClick={()=>setOpen(v=>!v)}>{tea.name}</button>
+        <span className="badge">{tea.style}</span>
+      </div>
+      {open && (
+        <div className="mt-2 text-sm">
+          <div className="subtle">{tea.origin?.country}{tea.origin?.region?`, ${tea.origin.region}`:""}</div>
+          <ul className="list-disc ml-5 mt-1">
+            {tea.brew?.infusion && <li>Проливами: {tea.brew.infusion.temp_c}°C; совет: 1-й пролив слить, ниже температура — меньше кофеина.</li>}
+            {tea.brew?.thermos &&  <li>Термос: {tea.brew.thermos.temp_c}°C · {tea.brew.thermos.steep_min} мин. (слива нет)</li>}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function isEvening(){ const h=new Date().getHours(); return h>=18 || h<5; }
+
+function App(){
+  const [mode,setMode] = useState("biochem");
+  const [pathway,setPathway] = useState(null);
+  const [selected,setSelected] = useState(null);
+  const [soonSleep,setSoonSleep] = useState(false);
+  const [results,setResults] = useState([]);
+
+  useEffect(()=>{
+    fetch("./public/catalog.json").then(r=>r.json()).then(j=>{ window.__CATALOG__ = j; });
+  },[]);
+
+  function runRecommend(){
+    const cat = (window.__CATALOG__||{}).teas || [];
+    setResults(cat.slice(0,4)); // заглушка — заменим на скоринг позже
+  }
+
+  const showWarn = (isEvening() || soonSleep) && pathway==="mood" && ["Энергия","Фокус","Творчество"].includes(selected||"");
+
+  return (
+    <main className="container">
+      <div className="h1 mb-2">teaclub by kai</div>
+      <div className="flex items-center gap-2 mb-3">
+        <button className={`button-brand ${mode==='biochem'?'opacity-100':'opacity-70'}`} onClick={()=>setMode('biochem')}>Биохимия</button>
+        <button className={`button-brand ${mode==='qi'?'opacity-100':'opacity-70'}`} onClick={()=>setMode('qi')}>Ча Ци</button>
+        <span className="badge cursor-help" title="«Ча Ци» — тонкая энергия чая, спокойствие и сосредоточенность. Это не просто стимуляция кофеином.">?</span>
+      </div>
+
+      <div className="card mb-3">
+        <div className="subtle text-sm mb-2">Выбери один вариант — по настроению <em>или</em> по вкусу</div>
+        <div className="font-medium mb-1">Настроение</div>
+        <div className="chips mb-3">
+          {MOODS.map(x=>(
+            <button key={x}
+              className={`chip ${selected===x && pathway==='mood' ? 'active' : ''}`}
+              onClick={()=>{setPathway('mood');setSelected(x);}}>{x}</button>
+          ))}
+        </div>
+        <div className="font-medium mb-1">Вкус</div>
+        <div className="chips">
+          {FLAVORS.map(x=>(
+            <button key={x}
+              className={`chip ${selected===x && pathway==='flavor' ? 'active' : ''}`}
+              onClick={()=>{setPathway('flavor');setSelected(x);}}>{x}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card flex items-center justify-between mb-1">
+        <div className="text-sm">Сейчас: <span className="badge">{new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span></div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={soonSleep} onChange={e=>setSoonSleep(e.target.checked)} />
+          Скоро сон? <span className="badge" title="через 2–5 часов?">?</span>
+        </label>
+      </div>
+      <p className="subtle text-xs mb-3">План по объёму: <b>5 г ≈ 1 л</b> (~2–3 человека). Перед чаем желательно перекусить (хотя бы банан).</p>
+
+      <button className="button-brand w-full mb-3 disabled:opacity-50" disabled={!selected} onClick={runRecommend}>Показать рекомендации</button>
+
+      {showWarn && (
+        <div className="card border border-yellow-400/40 mb-3">
+          ⚠ Может нарушить сон. Компромиссы: короткие проливы на негорячей воде, GABA-улун короткими проливами, травяные альтернативы.
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {results.slice(0,4).map(t=>(<AppCard key={t.id} tea={t} />))}
+      </div>
+
+      {selected && <Poster keyName={selected}/>}
+      <div className="mt-6 text-right link"
+           onClick={()=>alert("🐌 Я Кай — умею в чай до любой глубины. Провожу чайные мастермайнды tea & deep talk.\n\nUSDT TRC-20: TVgSTH5hKb6QMdpZtJE8TjBLSsHoVYzFj1\nUSDT Arbitrum: 0xE981146705437f03C8A241bD3d72454f8656bCb9")}>
+        by kai
+      </div>
+    </main>
+  );
+}
+
+// Рендер
+const root = ReactDOM.createRoot(document.getElementById("app"));
+root.render(<App />);
